@@ -6,19 +6,39 @@ use huge_sort::model::ElementChunk;
 use threadpool::ThreadPool;
 
 const INPUT_FILE: &str = "data.bin";
-const CHUNK_SIZE: usize = 12_500_000;
-const CHUNK_BUFFER_SIZE: usize = 1024 * 1024 * 100; // 100MB
-const WRITE_BUFFER_SIZE: usize = 1024 * 1024 * 1024; // 1GB
+const OUTPUT_FILE: &str = "sorted_output.bin";
+const CHUNK_SIZE: usize = 100_000_000; // 800MB
+const CHUNK_BUFFER_SIZE: usize = 10_000_000; // 80MB
+const WRITE_BUFFER_SIZE: usize = 100_000_000; // 800MB
 
 const TMP_CHUNK_PREFIX: &str = "tmp_chunk_";
 
 fn main() {
+    println!("Phase 1: Reading and Sorting Chunks...");
+    let chunk_count = chunk_and_sort();
+
+    println!("Total chunks generated: {}", chunk_count);
+    if chunk_count == 0 {
+        println!("No data to process.");
+        return;
+    }
+
+    println!("Phase 2: K-Way Merge Sorting...");
+    merge_chunks(chunk_count);
+
+    println!("Sorting completed successfully!");
+
+    // print first 100 elements of OUTPUT_FILE
+    let chunk = fetch_chunk(OUTPUT_FILE, 100, 0).expect("Failed to read chunk");
+    println!("First 100 elements: {:?}", chunk.elements);
+}
+
+fn chunk_and_sort() -> usize {
     let pool = ThreadPool::new(16);
 
     let mut chunk_count = 0;
     let mut current_idx = 0;
 
-    println!("Phase 1: Reading and Sorting Chunks...");
     while let Ok(mut chunk) = fetch_chunk(INPUT_FILE, CHUNK_SIZE, current_idx) {
         if chunk.is_empty() {
             break;
@@ -44,13 +64,10 @@ fn main() {
     // wait until all tasks are done
     pool.join();
 
-    println!("Total chunks generated: {}", chunk_count);
-    if chunk_count == 0 {
-        println!("No data to process.");
-        return;
-    }
+    chunk_count
+}
 
-    println!("Phase 2: K-Way Merge Sorting...");
+fn merge_chunks(chunk_count: usize) {
     let mut chunk_buf: Vec<ElementChunk> = Vec::new();
     let mut tmp_file_cursors: Vec<u64> = vec![0; chunk_count];
 
@@ -72,7 +89,7 @@ fn main() {
 
     let mut write_buffer: Vec<u64> = Vec::with_capacity(WRITE_BUFFER_SIZE);
 
-    let _ = delete_file("sorted_output.bin");
+    let _ = delete_file(OUTPUT_FILE);
 
     while let Some(Reverse((value, chunk_idx))) = min_heap.pop() {
         write_buffer.push(value);
@@ -97,15 +114,14 @@ fn main() {
         if write_buffer.len() >= WRITE_BUFFER_SIZE {
             let buffer_to_write =
                 std::mem::replace(&mut write_buffer, Vec::with_capacity(WRITE_BUFFER_SIZE));
-            append_chunk(ElementChunk::new(buffer_to_write), "sorted_output.bin")
+            append_chunk(ElementChunk::new(buffer_to_write), OUTPUT_FILE)
                 .expect("Failed to write output");
         }
     }
 
-    // Xả lượng buffer còn sót lại cuối cùng
+    // flush write buffer
     if !write_buffer.is_empty() {
-        append_chunk(ElementChunk::new(write_buffer), "sorted_output.bin")
-            .expect("Failed to write output");
+        append_chunk(ElementChunk::new(write_buffer), OUTPUT_FILE).expect("Failed to write output");
     }
 
     // Clean up temporary files
@@ -113,10 +129,4 @@ fn main() {
         let filename = format!("{}{}.bin", TMP_CHUNK_PREFIX, i);
         let _ = huge_sort::fs_ops::delete_file(&filename);
     }
-
-    println!("Sorting completed successfully!");
-
-    // print first 100 elements of sorted_output.bin
-    let chunk = fetch_chunk("sorted_output.bin", 100, 0).expect("Failed to read chunk");
-    println!("First 100 elements: {:?}", chunk.elements);
 }
