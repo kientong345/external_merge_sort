@@ -10,9 +10,9 @@ use threadpool::ThreadPool;
 
 const INPUT_FILE: &str = "data.bin";
 const OUTPUT_FILE: &str = "sorted_output.bin";
-const CHUNK_SIZE: usize = 100_000_000; // 100M elements (~800MB)
-const CHUNK_BUFFER_SIZE: usize = 10_000_000; // 10M elements (~80MB)
-const WRITE_BUFFER_SIZE: usize = 100_000_000; // 100M elements (~800MB)
+const CHUNK_SIZE: usize = 400_000_000; // 400M elements (~800MB)
+const CHUNK_BUFFER_SIZE: usize = 100_000_000; // 100M elements (~200MB)
+const WRITE_BUFFER_SIZE: usize = 400_000_000; // 400M elements (~800MB)
 
 const TMP_CHUNK_PREFIX: &str = "bench_chunk_";
 
@@ -58,12 +58,7 @@ fn format_secs(s: f64) -> String {
 fn main() {
     println!("===================================================");
     println!("  External Merge Sort - Benchmark");
-    println!(
-        "  Input: {}  |  Chunk: {}M  |  Buffer: {}M",
-        INPUT_FILE,
-        CHUNK_SIZE / 1_000_000,
-        CHUNK_BUFFER_SIZE / 1_000_000,
-    );
+    println!("  Input: {}", INPUT_FILE,);
     println!("===================================================\n");
 
     // phase 1
@@ -121,7 +116,7 @@ fn main() {
         total_cpu / total_time * 100.0
     );
     println!("===================================================");
-    println!("  Total Wall Time:   {}", format_secs(total_time));
+    println!("  Total Time:   {}", format_secs(total_time));
     println!("===================================================");
 }
 
@@ -169,7 +164,7 @@ fn merge_chunks(chunk_count: usize) {
         tmp_file_cursors[i] = read_len;
     }
 
-    let mut min_heap: BinaryHeap<Reverse<(u64, usize)>> = BinaryHeap::new();
+    let mut min_heap: BinaryHeap<Reverse<(u16, usize)>> = BinaryHeap::new();
 
     for (i, chunk) in chunk_buf.iter_mut().enumerate() {
         if let Some(value) = chunk.pop_front() {
@@ -177,7 +172,7 @@ fn merge_chunks(chunk_count: usize) {
         }
     }
 
-    let mut write_buffer: Vec<u64> = Vec::with_capacity(WRITE_BUFFER_SIZE);
+    let mut write_buffer: Vec<u16> = Vec::with_capacity(WRITE_BUFFER_SIZE);
     let _ = fs_ops::delete_file(OUTPUT_FILE);
 
     while let Some(Reverse((value, chunk_idx))) = min_heap.pop() {

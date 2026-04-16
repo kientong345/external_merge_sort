@@ -9,7 +9,7 @@ pub fn fetch_chunk(filename: &str, count: usize, start_index: u64) -> io::Result
     let file = File::open(filename)?;
     let mut reader = BufReader::with_capacity(1024 * 1024, file);
 
-    let element_size = std::mem::size_of::<u64>() as u64;
+    let element_size = std::mem::size_of::<u16>() as u64;
     let offset = start_index * element_size;
 
     reader.seek(io::SeekFrom::Start(offset))?;
@@ -19,9 +19,9 @@ pub fn fetch_chunk(filename: &str, count: usize, start_index: u64) -> io::Result
         .take((count * element_size as usize) as u64)
         .read_to_end(&mut byte_buffer)?;
 
-    let numbers: Vec<u64> = byte_buffer
+    let numbers: Vec<u16> = byte_buffer
         .chunks_exact(element_size as usize)
-        .map(|chunk| u64::from_ne_bytes(chunk.try_into().unwrap()))
+        .map(|chunk| u16::from_ne_bytes(chunk.try_into().unwrap()))
         .collect();
 
     Ok(ElementChunk::new(numbers))
@@ -36,7 +36,7 @@ pub fn store_chunk(chunk: ElementChunk, output_filename: &str) -> io::Result<()>
     let bytes = unsafe {
         std::slice::from_raw_parts(
             elements.as_ptr() as *const u8,
-            elements.len() * std::mem::size_of::<u64>(),
+            elements.len() * std::mem::size_of::<u16>(),
         )
     };
     writer.write_all(bytes)?;
@@ -56,7 +56,7 @@ pub fn append_chunk(chunk: ElementChunk, output_filename: &str) -> io::Result<()
     let bytes = unsafe {
         std::slice::from_raw_parts(
             elements.as_ptr() as *const u8,
-            elements.len() * std::mem::size_of::<u64>(),
+            elements.len() * std::mem::size_of::<u16>(),
         )
     };
     writer.write_all(bytes)?;

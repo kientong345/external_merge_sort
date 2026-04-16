@@ -3,22 +3,22 @@ use std::io::{BufWriter, Write};
 use rand::RngExt;
 
 const OUTPUT_FILE: &str = "data.bin";
-const NUM_ELEMENTS: u64 = 400_000_000; // 400M params
-const CHUNK_SIZE: usize = 10_000_000; // 10M params
+const NUM_ELEMENTS: u64 = 4_000_000_000; // 4B elements
+const CHUNK_SIZE: usize = 400_000_000; // 400M elements
 
 fn main() {
     let mut rng = rand::rng();
     let file = std::fs::File::create(OUTPUT_FILE).expect("Failed to create file");
     let mut writer = BufWriter::with_capacity(8 * 1024 * 1024, file);
 
-    let mut buffer: Vec<u64> = Vec::with_capacity(CHUNK_SIZE);
+    let mut buffer: Vec<u16> = Vec::with_capacity(CHUNK_SIZE);
 
     let total_chunks = (NUM_ELEMENTS + CHUNK_SIZE as u64 - 1) / CHUNK_SIZE as u64;
 
     println!(
-        "Generating {} random u64 numbers (~{} GB)...",
+        "Generating {} random u16 numbers (~{} GB)...",
         NUM_ELEMENTS,
-        NUM_ELEMENTS * 8 / 1_000_000_000
+        NUM_ELEMENTS * 2 / 1_000_000_000
     );
 
     for chunk_idx in 0..total_chunks {
@@ -30,7 +30,7 @@ fn main() {
         rng.fill(&mut buffer[..]);
 
         let bytes: &[u8] = unsafe {
-            std::slice::from_raw_parts(buffer.as_ptr() as *const u8, count * size_of::<u64>())
+            std::slice::from_raw_parts(buffer.as_ptr() as *const u8, count * size_of::<u16>())
         };
         writer.write_all(bytes).expect("Failed to write to file");
 

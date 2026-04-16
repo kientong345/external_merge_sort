@@ -1,11 +1,11 @@
 #[derive(Debug, Clone)]
 pub struct ElementChunk {
-    pub elements: Vec<u64>,
+    pub elements: Vec<u16>,
     pub read_cursor: usize,
 }
 
 impl ElementChunk {
-    pub fn new(elements: Vec<u64>) -> Self {
+    pub fn new(elements: Vec<u16>) -> Self {
         Self {
             elements,
             read_cursor: 0,
@@ -20,7 +20,7 @@ impl ElementChunk {
         self.len() == 0
     }
 
-    pub fn push_front(&mut self, value: u64) {
+    pub fn push_front(&mut self, value: u16) {
         if self.read_cursor > 0 {
             self.read_cursor -= 1;
             self.elements[self.read_cursor] = value;
@@ -29,7 +29,7 @@ impl ElementChunk {
         }
     }
 
-    pub fn pop_front(&mut self) -> Option<u64> {
+    pub fn pop_front(&mut self) -> Option<u16> {
         if self.is_empty() {
             None
         } else {
@@ -39,11 +39,11 @@ impl ElementChunk {
         }
     }
 
-    pub fn push_back(&mut self, value: u64) {
+    pub fn push_back(&mut self, value: u16) {
         self.elements.push(value);
     }
 
-    pub fn pop_back(&mut self) -> Option<u64> {
+    pub fn pop_back(&mut self) -> Option<u16> {
         if self.is_empty() {
             None
         } else {

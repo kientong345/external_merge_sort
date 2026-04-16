@@ -7,9 +7,9 @@ use threadpool::ThreadPool;
 
 const INPUT_FILE: &str = "data.bin";
 const OUTPUT_FILE: &str = "sorted_output.bin";
-const CHUNK_SIZE: usize = 100_000_000; // 800MB
-const CHUNK_BUFFER_SIZE: usize = 10_000_000; // 80MB
-const WRITE_BUFFER_SIZE: usize = 100_000_000; // 800MB
+const CHUNK_SIZE: usize = 400_000_000; // 800MB
+const CHUNK_BUFFER_SIZE: usize = 100_000_000; // 200MB
+const WRITE_BUFFER_SIZE: usize = 400_000_000; // 800MB
 
 const TMP_CHUNK_PREFIX: &str = "tmp_chunk_";
 
@@ -79,7 +79,7 @@ fn merge_chunks(chunk_count: usize) {
         tmp_file_cursors[i] = read_len;
     }
 
-    let mut min_heap: BinaryHeap<Reverse<(u64, usize)>> = BinaryHeap::new();
+    let mut min_heap: BinaryHeap<Reverse<(u16, usize)>> = BinaryHeap::new();
 
     for (i, chunk) in chunk_buf.iter_mut().enumerate() {
         if let Some(value) = chunk.pop_front() {
@@ -87,7 +87,7 @@ fn merge_chunks(chunk_count: usize) {
         }
     }
 
-    let mut write_buffer: Vec<u64> = Vec::with_capacity(WRITE_BUFFER_SIZE);
+    let mut write_buffer: Vec<u16> = Vec::with_capacity(WRITE_BUFFER_SIZE);
 
     let _ = delete_file(OUTPUT_FILE);
 
